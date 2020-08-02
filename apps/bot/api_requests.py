@@ -51,6 +51,12 @@ class APIHost:
         response = requests.put(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", json=body)
         return response
 
+    def add_host(self):
+        my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
+        body = {"url": self.callback_json}
+        response = requests.post(self.api_url + f"hosts/{my_key.key}/", json=body)
+        return response
+
     def get_all(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
         response = requests.get(self.api_url + f"hosts/{my_key.key}/")

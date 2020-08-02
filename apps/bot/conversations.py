@@ -41,6 +41,16 @@ def conversation_handler(bot, chat_id, update):
                 bot_message = f"API key {parsed_key} successfully linked!\n Try /info\n"
                 bot.sendMessage(chat_id=chat_id, text=bot_message)
 
+    elif "/add " in text:
+        bot.send_chat_action(chat_id=chat_id, action="typing")
+        parsed_host = text[text.index(" "):].strip()
+        new_host = APIHost(chat_id=chat_id, callback_json=parsed_host)
+        qpi_response = new_host.add_host().json()
+        api_response_format = str()
+        api_response_format += 'Host id: ' + str(qpi_response['id']) + chr(10) + 'Muted: ' + \
+                               str(qpi_response['muted']) + chr(10) + 'URL: ' + qpi_response['url'] + chr(10)
+        bot.sendMessage(chat_id=chat_id, text=api_response_format)
+
     elif text == "/menu":
         bot.sendMessage(chat_id=chat_id, text="Select from the menu.", reply_markup=main_keyboard)
 
@@ -49,8 +59,11 @@ def conversation_handler(bot, chat_id, update):
         bot_message = f"Welcome to HostMonitor,\n" \
                       f"I'm HostHunter_bot, and will interface you with our API! 🔥 🤘 \n" \
                       f"/start - Channel intro.\n" \
+                      f"/menu - Show keyboard menu.\n" \
                       f"/register - Register with HostMonitor and receive a new API key.\n" \
-                      f"/info - Get info about my apikey.\n"
+                      f"/info - Get info about my apikey and my hosts.\n" \
+                      f"/add <url> - Add url to the host monitor.\n" \
+                      f"/hosts - Get hosts list.\n"
 
         bot.sendMessage(chat_id=chat_id, text=bot_message, reply_markup=main_keyboard)
 
