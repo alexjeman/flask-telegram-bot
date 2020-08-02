@@ -1,9 +1,20 @@
-from apps.bot.api_requests import API, APINew, APILink
+import json
+
+from apps.bot.api_requests import API, APINew, APILink, APIHost
 from apps.bot.models import BotLink, db
+import telegram
 
 
 def conversation_handler(bot, chat_id, update):
     text = update.message.text.encode('utf-8').decode()
+
+    main_menu_buttons = [
+        [telegram.InlineKeyboardButton(text="/start"),
+         telegram.InlineKeyboardButton(text="/register")],
+        [telegram.InlineKeyboardButton(text="/info"),
+         telegram.InlineKeyboardButton(text="/hosts")]
+    ]
+    main_keyboard = telegram.ReplyKeyboardMarkup(main_menu_buttons, resize_keyboard=True)
 
     if "/start " in text:
         bot.send_chat_action(chat_id=chat_id, action="typing")
@@ -30,6 +41,9 @@ def conversation_handler(bot, chat_id, update):
                 bot_message = f"API key {parsed_key} successfully linked!\n Try /info\n"
                 bot.sendMessage(chat_id=chat_id, text=bot_message)
 
+    elif text == "/menu":
+        bot.sendMessage(chat_id=chat_id, text="Select from the menu.", reply_markup=main_keyboard)
+
     elif text == "/start":
         bot.send_chat_action(chat_id=chat_id, action="typing")
         bot_message = f"Welcome to HostMonitor,\n" \
@@ -37,7 +51,8 @@ def conversation_handler(bot, chat_id, update):
                       f"/start - Channel intro.\n" \
                       f"/register - Register with HostMonitor and receive a new API key.\n" \
                       f"/info - Get info about my apikey.\n"
-        return bot_message
+
+        bot.sendMessage(chat_id=chat_id, text=bot_message, reply_markup=main_keyboard)
 
     elif text == "/register":
         bot.send_chat_action(chat_id=chat_id, action="typing")
@@ -65,9 +80,28 @@ def conversation_handler(bot, chat_id, update):
         new_api_request = API(chat_id=chat_id)
         api_request = new_api_request.get_apikey_info()
         host_list = api_request.json()['hosts']
+        host_list_format = str()
+        for host in host_list:
+            host_list_format += chr(10) + 'Host id: ' + str(host['id']) + chr(10) + 'Muted: ' + \
+                                str(host['muted']) + chr(10) + 'URL: ' + host['url'] + chr(10)
+
         bot_message = f"Email: {api_request.json()['email'] if api_request.json()['email'] is not None else 'not linked'}\n" \
                       f"Total hosts added: {len(host_list)}\n" \
-                      f"{[['Host id: ' + str(hos['id']) + chr(10) + str('Muted: ') + str(hos['muted']) + chr(10) + str('URL: ') + str(hos['url']) + chr(10)][0] for hos in host_list][0]}" \
+                      f"{host_list_format}" \
             if len(host_list) > 0 \
             else f"Add some hosts to watch! 👽\n"
         bot.sendMessage(chat_id=chat_id, text=bot_message)
+
+    elif text == "/hosts":
+        host_api_request = APIHost(chat_id=chat_id)
+        api_request = host_api_request.get_all()
+        hosts = []
+        for index, host in enumerate(api_request.json()):
+            host_callback = {
+                "action": "get_host",
+                "hostid": host['id'],
+            }
+            hosts.append(
+                [telegram.InlineKeyboardButton(text=f"{host['url']}", callback_data=json.dumps(host_callback))])
+        keyboard = telegram.InlineKeyboardMarkup(hosts, resize_keyboard=True)
+        bot.sendMessage(chat_id=chat_id, text="Chose a host.", reply_markup=keyboard)

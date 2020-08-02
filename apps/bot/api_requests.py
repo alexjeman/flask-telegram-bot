@@ -40,13 +40,23 @@ class APILink:
 
 
 class APIHost:
-    def __init__(self, callback_json, chat_id, api_url=settings.API_URL):
-        self.callback_json = callback_json
+    def __init__(self,  chat_id, callback_json=None, api_url=settings.API_URL):
         self.chat_id = chat_id
+        self.callback_json = callback_json
         self.api_url = api_url
 
     def mute_host(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
         body = {"muted": self.callback_json["muted"]}
         response = requests.put(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", json=body)
+        return response
+
+    def get_all(self):
+        my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
+        response = requests.get(self.api_url + f"hosts/{my_key.key}/")
+        return response
+
+    def get_one(self):
+        my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
+        response = requests.get(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/")
         return response
