@@ -45,11 +45,14 @@ def conversation_handler(bot, chat_id, update):
         bot.send_chat_action(chat_id=chat_id, action="typing")
         parsed_host = text[text.index(" "):].strip()
         new_host = APIHost(chat_id=chat_id, callback_json=parsed_host)
-        qpi_response = new_host.add_host().json()
-        api_response_format = str()
-        api_response_format += 'Host id: ' + str(qpi_response['id']) + chr(10) + 'Muted: ' + \
-                               str(qpi_response['muted']) + chr(10) + 'URL: ' + qpi_response['url'] + chr(10)
-        bot.sendMessage(chat_id=chat_id, text=api_response_format)
+        qpi_response = new_host.add_host()
+        if f"{qpi_response.status_code}" == "201":
+            api_response_format = str()
+            api_response_format += 'Host id: ' + str(qpi_response.json()['id']) + chr(10) + 'Muted: ' + \
+                                   str(qpi_response.json()['muted']) + chr(10) + 'URL: ' + qpi_response.json()['url'] + chr(10)
+            bot.sendMessage(chat_id=chat_id, text=api_response_format)
+        elif f"{qpi_response.status_code}" == "400":
+            bot.sendMessage(chat_id=chat_id, text=qpi_response.json()['message'])
 
     elif text == "/menu":
         bot.sendMessage(chat_id=chat_id, text="Select from the menu.", reply_markup=main_keyboard)
