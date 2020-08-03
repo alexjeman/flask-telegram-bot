@@ -19,19 +19,32 @@ class BotResource(Resource):
         update = telegram.Update.de_json(request.get_json(force=True), bot)
 
         try:
+            is_edited = bool(update.edited_message)
+        except AttributeError as error:
+            print("Update is not a edit message:", error, update, file=sys.stderr)
+            is_edited = False
+
+        try:
             is_callback = bool(update.callback_query.data)
         except AttributeError as error:
-            print("Possible spam callback received:", update, file=sys.stderr)
+            print("Update is not a callback:", error, update, file=sys.stderr)
             is_callback = False
 
         try:
             is_chat_message = bool(update.message)
         except AttributeError as error:
-            print("Possible spam message received:", update, file=sys.stderr)
+            print("Update is not a text message:", error, update, file=sys.stderr)
             is_chat_message = False
 
+        try:
+            if is_callback is not True and is_chat_message is not True and is_edited is not True:
+                raise AttributeError
+        except AttributeError:
+            print("Spam message:", is_callback, is_chat_message, update, file=sys.stderr)
+            pass
+
         if is_chat_message:
-            print("Incoming chat message:", update.message, file=sys.stderr)
+            print("Incoming chat message:", update.message.text, file=sys.stderr)
             chat_id = update.message.chat_id
             message_response = conversation_handler(bot=bot, chat_id=chat_id, update=update)
             if message_response:

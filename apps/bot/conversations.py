@@ -6,7 +6,11 @@ import telegram
 
 
 def conversation_handler(bot, chat_id, update):
-    text = update.message.text.encode('utf-8').decode()
+    try:
+        text = update.message.text.encode('utf-8').decode()
+    except AttributeError as error:
+        print('Empty text message', error)
+        text = str()
 
     main_menu_buttons = [
         [telegram.InlineKeyboardButton(text="/start"),
@@ -129,7 +133,7 @@ def conversation_handler(bot, chat_id, update):
                       f"Total hosts added: {len(host_list)}\n" \
                       f"{host_list_format}" \
             if len(host_list) > 0 \
-            else f"Add some hosts to watch! 👽\n"
+            else f"Add some hosts to watch! 👽 /add\n"
         bot.sendMessage(chat_id=chat_id, text=bot_message, disable_web_page_preview=True)
 
     elif text == "/hosts":
@@ -144,4 +148,7 @@ def conversation_handler(bot, chat_id, update):
             hosts.append(
                 [telegram.InlineKeyboardButton(text=f"{host['url']}", callback_data=json.dumps(host_callback))])
         keyboard = telegram.InlineKeyboardMarkup(hosts, resize_keyboard=True)
-        bot.sendMessage(chat_id=chat_id, text="Chose a host.", reply_markup=keyboard)
+        bot.sendMessage(chat_id=chat_id,
+                        text="Click on a host for detailed history." if len(hosts) > 0
+                        else "Add some hosts to watch first! 🔭 /add",
+                        reply_markup=keyboard)

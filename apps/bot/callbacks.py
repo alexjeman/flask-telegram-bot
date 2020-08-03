@@ -20,6 +20,5 @@ def callback_handler(bot, chat_id, query):
         hosts = request_callback.json()
         message = str()
         for item in hosts:
-            message += 'Code: ' + item['code'] + ', Response time: ' + \
-                       item['response_time'] + ', Time: ' + item['time'] + chr(10)
+            message += item['time'] + ' | http ' + item['code'] + ' | ' + item['response_time'] + ' ms' + chr(10)
         return message
