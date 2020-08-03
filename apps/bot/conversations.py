@@ -38,7 +38,7 @@ def conversation_handler(bot, chat_id, update):
                 )
                 db.session.add(link_existing)
                 db.session.commit()
-                bot_message = f"API key {parsed_key} successfully linked!\n Try /info\n"
+                bot_message = f"API key {parsed_key} successfully linked! \nTry /add <url> to start monitoring a host.\n"
                 bot.sendMessage(chat_id=chat_id, text=bot_message)
 
     elif "/add " in text:
@@ -49,7 +49,8 @@ def conversation_handler(bot, chat_id, update):
         if f"{qpi_response.status_code}" == "201":
             api_response_format = str()
             api_response_format += 'Host id: ' + str(qpi_response.json()['id']) + chr(10) + 'Muted: ' + \
-                                   str(qpi_response.json()['muted']) + chr(10) + 'URL: ' + qpi_response.json()['url'] + chr(10)
+                                   str(qpi_response.json()['muted']) + chr(10) + 'URL: ' + qpi_response.json()[
+                                       'url'] + chr(10)
             bot.sendMessage(chat_id=chat_id, text=api_response_format)
         elif f"{qpi_response.status_code}" == "400":
             bot.sendMessage(chat_id=chat_id, text=qpi_response.json()['message'])
@@ -69,8 +70,27 @@ def conversation_handler(bot, chat_id, update):
                       f"/hosts - Get hosts list.\n"
 
         bot.sendMessage(chat_id=chat_id, text=bot_message, reply_markup=main_keyboard)
+        check_registered = bool(BotLink.query.filter_by(chat_id=chat_id).first())
+        if not check_registered:
+            bot.sendMessage(chat_id=chat_id, text=f"Looks like this is your first time there.\n"
+                                                  f"Welcome to the club! 😼 🐦 🦇 \n")
+            bot.send_chat_action(chat_id=chat_id, action="typing")
+            bot_message_pre = f"Requesting new API ✈ ⏰...\n"
+            bot.sendMessage(chat_id=chat_id, text=bot_message_pre)
+            new_api = APINew(chat_id=chat_id)
+            new_api_request = new_api.get_newkey()
+            if f"{new_api_request.status_code}" == "200":
+                bot_message_success = f"Your new personal API key is : {new_api_request.json()['apikey']}\n"
+                bot.sendMessage(chat_id=chat_id, text=bot_message_success)
+                new_botlink = BotLink(
+                    key=new_api_request.json()['apikey'],
+                    chat_id=chat_id
+                )
+                db.session.add(new_botlink)
+                db.session.commit()
+                print("linked", chat_id, new_api_request.json()['apikey'])
 
-    elif text == "/register":
+    elif text == "/register" or text == "/start":
         bot.send_chat_action(chat_id=chat_id, action="typing")
         new_api = APINew(chat_id=chat_id)
         bot_message_pre = f"Requesting new API ✈ ⏰...\n"

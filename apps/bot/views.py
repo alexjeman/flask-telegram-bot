@@ -19,7 +19,9 @@ class BotResource(Resource):
         update = telegram.Update.de_json(request.get_json(force=True), bot)
         if update.callback_query is None:
             print("Incoming chat message:", update.message, file=sys.stderr)
-            chat_id = update.message.chat_id
+            chat_id = str()
+            if bool(update.message.chat_id):
+                chat_id = update.message.chat_id
             message_response = conversation_handler(bot=bot, chat_id=chat_id, update=update)
             if message_response:
                 bot.sendMessage(chat_id=chat_id, text=message_response)

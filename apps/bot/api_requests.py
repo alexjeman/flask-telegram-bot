@@ -12,7 +12,7 @@ class API:
 
     def get_apikey_info(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
-        response = requests.get(f"{self.api_url}apikey/{my_key.key}")
+        response = requests.get(f"{self.api_url}apikey/{my_key.key}", timeout=60)
         return response
 
 
@@ -23,7 +23,7 @@ class APINew:
 
     def get_newkey(self):
         body = {"chat_id": f"{self.chat_id}"}
-        response = requests.post(self.api_url + "apikey/", json=body)
+        response = requests.post(self.api_url + "apikey/", json=body, timeout=60)
         return response
 
 
@@ -35,7 +35,7 @@ class APILink:
 
     def link_existing(self):
         body = {"chat_id": f"{self.chat_id}"}
-        response = requests.post(self.api_url + f"apikey/{self.apikey}/", json=body)
+        response = requests.post(self.api_url + f"apikey/{self.apikey}/", json=body, timeout=60)
         return response
 
 
@@ -48,21 +48,21 @@ class APIHost:
     def mute_host(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
         body = {"muted": self.callback_json["muted"]}
-        response = requests.put(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", json=body)
+        response = requests.put(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", json=body, timeout=60)
         return response
 
     def add_host(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
         body = {"url": self.callback_json}
-        response = requests.post(self.api_url + f"hosts/{my_key.key}/", json=body)
+        response = requests.post(self.api_url + f"hosts/{my_key.key}/", json=body, timeout=60)
         return response
 
     def get_all(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
-        response = requests.get(self.api_url + f"hosts/{my_key.key}/")
+        response = requests.get(self.api_url + f"hosts/{my_key.key}/", timeout=60)
         return response
 
     def get_one(self):
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
-        response = requests.get(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/")
+        response = requests.get(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", timeout=60)
         return response
