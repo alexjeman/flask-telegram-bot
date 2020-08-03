@@ -66,3 +66,8 @@ class APIHost:
         my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
         response = requests.get(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", timeout=60)
         return response
+
+    def delete(self):
+        my_key = BotLink.query.filter_by(chat_id=self.chat_id).first()
+        response = requests.delete(self.api_url + f"hosts/{self.callback_json['hostid']}/{my_key.key}/", timeout=60)
+        return response

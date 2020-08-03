@@ -70,12 +70,12 @@ def conversation_handler(bot, chat_id, update):
         bot.send_chat_action(chat_id=chat_id, action="typing")
         bot_message = f"Welcome to HostMonitor,\n" \
                       f"I'm HostHunter_bot, and will interface you with our API! 🔥 🤘 \n" \
-                      f"/start - Channel intro.\n" \
-                      f"/menu - Show keyboard menu.\n" \
-                      f"/register - Register with HostMonitor and receive a new API key.\n" \
-                      f"/info - Get info about my apikey and my hosts.\n" \
-                      f"/add <url> - Add url to the host monitor.\n" \
-                      f"/hosts - Get hosts list.\n"
+                      f"/start - Channel intro. 🏮\n" \
+                      f"/menu - Show keyboard menu. ⌨\n" \
+                      f"/register - Register with HostMonitor and receive a new API key. 🔑\n" \
+                      f"/info - Get info about my apikey. 💡\n" \
+                      f"/add <url> - Add url to the host monitor. 🔗\n" \
+                      f"/hosts - Get hosts list. 🖇\n"
 
         bot.sendMessage(chat_id=chat_id, text=bot_message, reply_markup=main_keyboard)
         check_registered = bool(BotLink.query.filter_by(chat_id=chat_id).first())
@@ -131,7 +131,7 @@ def conversation_handler(bot, chat_id, update):
 
         bot_message = f"Email: {api_request.json()['email'] if api_request.json()['email'] is not None else 'not linked'}\n" \
                       f"Total hosts added: {len(host_list)}\n" \
-                      f"{host_list_format}" \
+                      f"Try /hosts for the full host list ⤵" \
             if len(host_list) > 0 \
             else f"Add some hosts to watch! 👽 /add\n"
         bot.sendMessage(chat_id=chat_id, text=bot_message, disable_web_page_preview=True)
@@ -141,14 +141,33 @@ def conversation_handler(bot, chat_id, update):
         api_request = host_api_request.get_all()
         hosts = []
         for index, host in enumerate(api_request.json()):
+            btn_unmute = {
+                "action": "mute",
+                "hostid": host['id'],
+                "muted": False
+            }
+            btn_mute = {
+                "action": "mute",
+                "hostid": host['id'],
+                "muted": True
+            }
+            btn_delete = {
+                "action": "delete",
+                "hostid": host['id']
+            }
             host_callback = {
                 "action": "get_host",
                 "hostid": host['id'],
             }
             hosts.append(
-                [telegram.InlineKeyboardButton(text=f"{host['url']}", callback_data=json.dumps(host_callback))])
+                [telegram.InlineKeyboardButton(text=f"📂 {host['url']}", callback_data=json.dumps(host_callback))])
+            hosts.append([
+                telegram.InlineKeyboardButton(text="🔕 Mute", callback_data=json.dumps(btn_mute)),
+                telegram.InlineKeyboardButton(text="🔔 Unmute", callback_data=json.dumps(btn_unmute)),
+                telegram.InlineKeyboardButton(text="🗑 Delete", callback_data=json.dumps(btn_delete))
+            ])
         keyboard = telegram.InlineKeyboardMarkup(hosts, resize_keyboard=True)
         bot.sendMessage(chat_id=chat_id,
-                        text="Click on a host for detailed history." if len(hosts) > 0
+                        text="Click on the icons 📂 to view detailed logs ⤵" if len(hosts) > 0
                         else "Add some hosts to watch first! 🔭 /add",
                         reply_markup=keyboard)

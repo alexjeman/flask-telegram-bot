@@ -82,10 +82,16 @@ class BotResource(Resource):
             "hostid": request.json["host_id"],
             "muted": True
         }
-        buttons = [[
-            telegram.InlineKeyboardButton(text="Mute", callback_data=json.dumps(btn_mute)),
-            telegram.InlineKeyboardButton(text="Unmute", callback_data=json.dumps(btn_unmute))
-        ]]
+        btn_delete = {
+            "action": "delete",
+            "hostid": request.json["host_id"]
+        }
+        buttons = []
+        buttons.append([
+            telegram.InlineKeyboardButton(text="🔕 Mute", callback_data=json.dumps(btn_mute)),
+            telegram.InlineKeyboardButton(text="🔔 Unmute", callback_data=json.dumps(btn_unmute)),
+            telegram.InlineKeyboardButton(text="🗑 Delete", callback_data=json.dumps(btn_delete))
+        ])
         keyboard = telegram.InlineKeyboardMarkup(buttons)
         bot.send_chat_action(chat_id=request.json['chat_id'], action="typing")
         bot.sendMessage(chat_id=request.json['chat_id'], text=request.json['text'], reply_markup=keyboard)

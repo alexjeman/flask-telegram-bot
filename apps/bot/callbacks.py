@@ -8,13 +8,20 @@ def callback_handler(bot, chat_id, query):
     callback_json = json.loads(query.data)
 
     if "mute" in callback_json["action"]:
-        print("Callback action:", callback_json["muted"], file=sys.stderr)
         api_host = APIHost(chat_id=chat_id, callback_json=callback_json)
         request_callback = api_host.mute_host()
         return "Host was muted." if request_callback.json()["muted"] else "Host is active."
 
+    elif "delete" in callback_json["action"]:
+        api_host = APIHost(chat_id=chat_id, callback_json=callback_json)
+        request_callback = api_host.delete()
+        try:
+            deleted = request_callback.json()["url"]
+            return "Host was deleted."
+        except:
+            return "Host could not be found."
+
     elif "get_host" in callback_json["action"]:
-        print("Callback action get:", callback_json["hostid"], file=sys.stderr)
         api_host = APIHost(chat_id=chat_id, callback_json=callback_json)
         request_callback = api_host.get_one()
         hosts = request_callback.json()
