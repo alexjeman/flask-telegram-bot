@@ -17,15 +17,26 @@ class BotResource(Resource):
     @api.doc("bot_root")
     def post(self):
         update = telegram.Update.de_json(request.get_json(force=True), bot)
-        if update.callback_query is None:
+
+        try:
+            is_callback = bool(update.callback_query.data)
+        except AttributeError as error:
+            print("Possible spam callback received:", update, file=sys.stderr)
+            is_callback = False
+
+        try:
+            is_chat_message = bool(update.message)
+        except AttributeError as error:
+            print("Possible spam message received:", update, file=sys.stderr)
+            is_chat_message = False
+
+        if is_chat_message:
             print("Incoming chat message:", update.message, file=sys.stderr)
-            chat_id = str()
-            if bool(update.message.chat_id):
-                chat_id = update.message.chat_id
+            chat_id = update.message.chat_id
             message_response = conversation_handler(bot=bot, chat_id=chat_id, update=update)
             if message_response:
                 bot.sendMessage(chat_id=chat_id, text=message_response)
-        else:
+        elif is_callback:
             print("Incoming callback message:", update.callback_query.data, file=sys.stderr)
             chat_id = update.callback_query.message.chat.id
             callback_response = callback_handler(bot=bot, chat_id=chat_id, query=update.callback_query)

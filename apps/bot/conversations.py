@@ -51,9 +51,13 @@ def conversation_handler(bot, chat_id, update):
             api_response_format += 'Host id: ' + str(qpi_response.json()['id']) + chr(10) + 'Muted: ' + \
                                    str(qpi_response.json()['muted']) + chr(10) + 'URL: ' + qpi_response.json()[
                                        'url'] + chr(10)
-            bot.sendMessage(chat_id=chat_id, text=api_response_format)
+            bot.sendMessage(chat_id=chat_id, text=api_response_format, disable_web_page_preview=True)
         elif f"{qpi_response.status_code}" == "400":
             bot.sendMessage(chat_id=chat_id, text=qpi_response.json()['message'])
+
+    elif text == "/add":
+        bot.send_chat_action(chat_id=chat_id, action="typing")
+        bot.sendMessage(chat_id=chat_id, text="Usage example, type in chat: /add https://www.google.com/")
 
     elif text == "/menu":
         bot.sendMessage(chat_id=chat_id, text="Select from the menu.", reply_markup=main_keyboard)
@@ -126,7 +130,7 @@ def conversation_handler(bot, chat_id, update):
                       f"{host_list_format}" \
             if len(host_list) > 0 \
             else f"Add some hosts to watch! 👽\n"
-        bot.sendMessage(chat_id=chat_id, text=bot_message)
+        bot.sendMessage(chat_id=chat_id, text=bot_message, disable_web_page_preview=True)
 
     elif text == "/hosts":
         host_api_request = APIHost(chat_id=chat_id)
