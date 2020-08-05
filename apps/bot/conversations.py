@@ -162,12 +162,12 @@ def conversation_handler(bot, chat_id, update):
             hosts.append(
                 [telegram.InlineKeyboardButton(text=f"📂 {host['url']}", callback_data=json.dumps(host_callback))])
             hosts.append([
-                telegram.InlineKeyboardButton(text="🔕 Mute", callback_data=json.dumps(btn_mute)),
-                telegram.InlineKeyboardButton(text="🔔 Unmute", callback_data=json.dumps(btn_unmute)),
-                telegram.InlineKeyboardButton(text="🗑 Delete", callback_data=json.dumps(btn_delete))
+                telegram.InlineKeyboardButton(text="Mute", callback_data=json.dumps(btn_mute)),
+                telegram.InlineKeyboardButton(text="Unmute", callback_data=json.dumps(btn_unmute)),
+                telegram.InlineKeyboardButton(text="Delete", callback_data=json.dumps(btn_delete))
             ])
         keyboard = telegram.InlineKeyboardMarkup(hosts, resize_keyboard=True)
         bot.sendMessage(chat_id=chat_id,
-                        text="Click on the icons 📂 to view detailed logs ⤵" if len(hosts) > 0
+                        text="Click on the icon 📂 to view detailed logs ⤵" if len(hosts) > 0
                         else "Add some hosts to watch first! 🔭 /add",
                         reply_markup=keyboard)
