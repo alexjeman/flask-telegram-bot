@@ -18,30 +18,12 @@ class BotResource(Resource):
     def post(self):
         update = telegram.Update.de_json(request.get_json(force=True), bot)
 
-        try:
-            is_edited = bool(update.edited_message)
-        except AttributeError as error:
-            print("Update is not a edit message:", error, update, file=sys.stderr)
-            is_edited = False
+        is_edited = getattr(update, 'edited_message')
+        is_callback = getattr(update, 'callback_query')
+        is_chat_message = getattr(update, 'message')
 
-        try:
-            is_callback = bool(update.callback_query.data)
-        except AttributeError as error:
-            print("Update is not a callback:", error, update, file=sys.stderr)
-            is_callback = False
-
-        try:
-            is_chat_message = bool(update.message)
-        except AttributeError as error:
-            print("Update is not a text message:", error, update, file=sys.stderr)
-            is_chat_message = False
-
-        try:
-            if is_callback is not True and is_chat_message is not True and is_edited is not True:
-                raise AttributeError
-        except AttributeError:
-            print("Spam message:", is_callback, is_chat_message, update, file=sys.stderr)
-            pass
+        if is_callback is not True and is_chat_message is not True and is_edited is not True:
+            print("Spam message:", is_callback, is_chat_message, is_edited, update, file=sys.stderr)
 
         if is_chat_message:
             print("Incoming chat message:", update.message.text, file=sys.stderr)
@@ -72,19 +54,22 @@ class BotResource(Resource):
 class BotResource(Resource):
     @api.doc("webhook")
     def post(self):
+        host_id = request.json['host_id']
+        chat_id = request.json['chat_id']
+        text = request.json['text']
         btn_unmute = {
             "action": "mute",
-            "hostid": request.json['host_id'],
+            "hostid": host_id,
             "muted": False
         }
         btn_mute = {
             "action": "mute",
-            "hostid": request.json["host_id"],
+            "hostid": host_id,
             "muted": True
         }
         btn_delete = {
             "action": "delete",
-            "hostid": request.json["host_id"]
+            "hostid": host_id
         }
         buttons = []
         buttons.append([
@@ -93,5 +78,5 @@ class BotResource(Resource):
             telegram.InlineKeyboardButton(text="Delete", callback_data=json.dumps(btn_delete))
         ])
         keyboard = telegram.InlineKeyboardMarkup(buttons)
-        bot.send_chat_action(chat_id=request.json['chat_id'], action="typing")
-        bot.sendMessage(chat_id=request.json['chat_id'], text=request.json['text'], reply_markup=keyboard)
+        bot.send_chat_action(chat_id=chat_id, action="typing")
+        bot.sendMessage(chat_id=chat_id, text=text, reply_markup=keyboard)

@@ -6,11 +6,7 @@ import telegram
 
 
 def conversation_handler(bot, chat_id, update):
-    try:
-        text = update.message.text.encode('utf-8').decode()
-    except AttributeError as error:
-        print('Empty text message', error)
-        text = str()
+    text = getattr(update.message, 'text', str()).encode('utf-8').decode()
 
     main_menu_buttons = [
         [telegram.InlineKeyboardButton(text="/start"),
@@ -46,18 +42,21 @@ def conversation_handler(bot, chat_id, update):
                 bot.sendMessage(chat_id=chat_id, text=bot_message)
 
     elif "/add " in text:
+        """Splits url_1 url_2 url_3 from text and sends requests to check and add each of them"""
         bot.send_chat_action(chat_id=chat_id, action="typing")
-        parsed_host = text[text.index(" "):].strip()
-        new_host = APIHost(chat_id=chat_id, callback_json=parsed_host)
-        qpi_response = new_host.add_host()
-        if f"{qpi_response.status_code}" == "201":
-            api_response_format = str()
-            api_response_format += 'Host id: ' + str(qpi_response.json()['id']) + chr(10) + 'Muted: ' + \
-                                   str(qpi_response.json()['muted']) + chr(10) + 'URL: ' + qpi_response.json()[
-                                       'url'] + chr(10)
-            bot.sendMessage(chat_id=chat_id, text=api_response_format, disable_web_page_preview=True)
-        elif f"{qpi_response.status_code}" == "400":
-            bot.sendMessage(chat_id=chat_id, text=qpi_response.json()['message'])
+        _, *parsed_host = text.split()
+        for url in parsed_host:
+            new_host = APIHost(chat_id=chat_id, callback_json=url)
+            api_response = new_host.add_host()
+            response = api_response.json()
+            if f"{api_response.status_code}" == "201":
+                api_response_format = f"Host id: {response.get('id')}\n" \
+                                      f"Muted: {response.get('muted')}\n" \
+                                      f"URL: {response.get('url')}\n"
+
+                bot.sendMessage(chat_id=chat_id, text=api_response_format, disable_web_page_preview=True)
+            elif f"{api_response.status_code}" == "400":
+                bot.sendMessage(chat_id=chat_id, text=response['message'])
 
     elif text == "/add":
         bot.send_chat_action(chat_id=chat_id, action="typing")
@@ -87,16 +86,17 @@ def conversation_handler(bot, chat_id, update):
             bot.sendMessage(chat_id=chat_id, text=bot_message_pre)
             new_api = APINew(chat_id=chat_id)
             new_api_request = new_api.get_newkey()
+            response = new_api_request.json()
             if f"{new_api_request.status_code}" == "200":
-                bot_message_success = f"Your new personal API key is : {new_api_request.json()['apikey']}\n"
+                bot_message_success = f"Your new personal API key is : {response['apikey']}\n"
                 bot.sendMessage(chat_id=chat_id, text=bot_message_success)
                 new_botlink = BotLink(
-                    key=new_api_request.json()['apikey'],
+                    key=response['apikey'],
                     chat_id=chat_id
                 )
                 db.session.add(new_botlink)
                 db.session.commit()
-                print("linked", chat_id, new_api_request.json()['apikey'])
+                print("linked", chat_id, response['apikey'])
 
     elif text == "/register" or text == "/start":
         bot.send_chat_action(chat_id=chat_id, action="typing")
@@ -105,16 +105,17 @@ def conversation_handler(bot, chat_id, update):
         bot.sendMessage(chat_id=chat_id, text=bot_message_pre)
 
         new_api_request = new_api.get_newkey()
+        response = new_api_request.json()
         if f"{new_api_request.status_code}" == "200":
-            bot_message_success = f"Your new personal API key is : {new_api_request.json()['apikey']}\n"
+            bot_message_success = f"Your new personal API key is : {response['apikey']}\n"
             bot.sendMessage(chat_id=chat_id, text=bot_message_success)
             new_botlink = BotLink(
-                key=new_api_request.json()['apikey'],
+                key=response['apikey'],
                 chat_id=chat_id
             )
             db.session.add(new_botlink)
             db.session.commit()
-            print("linked", chat_id, new_api_request.json()['apikey'])
+            print("linked", chat_id, response['apikey'])
 
         elif f"{new_api_request.status_code}" == "409":
             bot.sendMessage(chat_id=chat_id, text=f"You are already registered, try some get requests! 🔔\n")
@@ -123,24 +124,26 @@ def conversation_handler(bot, chat_id, update):
         bot.send_chat_action(chat_id=chat_id, action="typing")
         new_api_request = API(chat_id=chat_id)
         api_request = new_api_request.get_apikey_info()
-        host_list = api_request.json()['hosts']
+        host_list = api_request.json()
         host_list_format = str()
-        for host in host_list:
-            host_list_format += chr(10) + 'Host id: ' + str(host['id']) + chr(10) + 'Muted: ' + \
-                                str(host['muted']) + chr(10) + 'URL: ' + host['url'] + chr(10)
+        for host in host_list['hosts']:
+            host_list_format += f"Host id: {host['id']}\n" \
+                                f"Muted: {host['muted']}\n" \
+                                f"URL: {host['url']}\n"
 
-        bot_message = f"Email: {api_request.json()['email'] if api_request.json()['email'] is not None else 'not linked'}\n" \
-                      f"Total hosts added: {len(host_list)}\n" \
+        bot_message = f"Email: {host_list['email'] if host_list['email'] is not None else 'not linked'}\n" \
+                      f"Total hosts added: {len(host_list['hosts'])}\n" \
                       f"Try /hosts for the full host list ⤵" \
-            if len(host_list) > 0 \
+            if len(host_list['hosts']) > 0 \
             else f"Add some hosts to watch! 👽 /add\n"
         bot.sendMessage(chat_id=chat_id, text=bot_message, disable_web_page_preview=True)
 
     elif text == "/hosts":
         host_api_request = APIHost(chat_id=chat_id)
         api_request = host_api_request.get_all()
+        response = api_request.json()
         hosts = []
-        for index, host in enumerate(api_request.json()):
+        for index, host in enumerate(response):
             btn_unmute = {
                 "action": "mute",
                 "hostid": host['id'],
